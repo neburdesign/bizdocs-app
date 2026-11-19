@@ -1,0 +1,110 @@
+<main class="app-shell" (click)="openMenu = null">
+  <header class="topbar">
+    <button class="icon-button hamburger" aria-label="Abrir menu" (click)="$event.stopPropagation(); toast='Menu principal';">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand" aria-label="bizdocs"><span class="brand-mark">››</span><span>biz<span>docs</span></span></div>
+    <button class="profile-button" aria-label="Perfil" (click)="$event.stopPropagation(); toast='Perfil de utilizador';">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19v-1.5a6.5 6.5 0 0 1 13 0V19"/></svg>
+    </button>
+  </header>
+
+  <section class="welcome">
+    <div class="date">24 de Janeiro de 2025</div>
+    <p>Bem-vindo Guilherme, está a interagir com <a href="#" (click)="$event.preventDefault()">DummyCorp</a></p>
+  </section>
+
+  <section class="summary-viewport" aria-label="Resumo">
+    <div class="summary-track">
+      <article class="summary-card approval-card">
+        <div class="summary-icon clipboard"><svg viewBox="0 0 64 72"><path d="M21 10h-7a5 5 0 0 0-5 5v47a5 5 0 0 0 5 5h42a5 5 0 0 0 5-5V15a5 5 0 0 0-5-5h-7"/><path d="M22 5h20a4 4 0 0 1 4 4v8H18V9a4 4 0 0 1 4-4Z"/><path d="m19 39 9 9 19-21"/></svg></div>
+        <div class="summary-copy">
+          <div class="summary-label">Pedidos de <strong>aprovação</strong></div>
+          <div class="summary-numbers"><div><b>{{ pendingCount }}</b><small>Em aprovação</small></div><i></i><div><b>{{ rejectedCount.toString().padStart(2, '0') }}</b><small>Rejeitados</small></div></div>
+        </div>
+      </article>
+      <article class="summary-card">
+        <div class="summary-icon heart-icon">♡</div>
+        <div class="summary-copy"><div class="summary-label">Documentos <strong>favoritos</strong></div><div class="summary-numbers"><div><b>{{ favoritesCount.toString().padStart(2, '0') }}</b><small>Total favoritos</small></div></div></div>
+      </article>
+      <article class="summary-card">
+        <div class="summary-icon capture-icon">▣</div>
+        <div class="summary-copy"><div class="summary-label">As minhas <strong>capturas</strong></div><div class="summary-numbers"><div><b>03</b><small>Pendentes</small></div><i></i><div><b>05</b><small>Carregados</small></div></div></div>
+      </article>
+      <article class="summary-card">
+        <div class="summary-icon inbox-icon">▤</div>
+        <div class="summary-copy"><div class="summary-label">Documentos na <strong>inbox</strong></div><div class="summary-numbers"><div><b>08</b><small>Por tratar</small></div></div></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="list-toolbar">
+    <button class="section-select" (click)="$event.stopPropagation(); setSection(activeSection === 'Pedidos de aprovação' ? 'Arquivo de aprovação' : 'Pedidos de aprovação')">
+      {{ activeSection }} <span class="chevron">⌄</span>
+    </button>
+    <div class="toolbar-actions">
+      <div class="dropdown-wrap" (click)="$event.stopPropagation()">
+        <button class="toolbar-icon" aria-label="Filtrar por utilizador" [class.is-active]="openMenu === 'owner'" (click)="toggleMenu('owner')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.4"/><path d="M5 21v-2.3a7 7 0 0 1 14 0V21"/></svg>
+        </button>
+        <div class="dropdown owner-dropdown" *ngIf="openMenu === 'owner'">
+          <button *ngFor="let option of ownerOptions" (click)="selectOwner(option)" [class.selected]="ownerFilter === option">
+            <span>{{ option }}</span><span class="tick" *ngIf="ownerFilter === option">✓</span>
+          </button>
+        </div>
+      </div>
+      <div class="dropdown-wrap" (click)="$event.stopPropagation()">
+        <button class="toolbar-icon" aria-label="Filtrar por estado" [class.is-active]="openMenu === 'status'" (click)="toggleMenu('status')">
+          <svg viewBox="0 0 24 24"><path d="M3 4h18l-7 8v7l-4 2v-9L3 4Z"/></svg>
+        </button>
+        <div class="dropdown status-dropdown" *ngIf="openMenu === 'status'">
+          <button *ngFor="let option of statusOptions" (click)="selectStatus(option)" [class.selected]="statusFilter === option">
+            <span>{{ option }}</span><span class="tick" *ngIf="statusFilter === option">✓</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="active-filters" *ngIf="ownerFilter !== 'Todos' || statusFilter !== 'Em aprovação'">
+    <button class="filter-chip" (click)="selectOwner('Todos')">{{ ownerFilter }} <span>×</span></button>
+    <button class="filter-chip" *ngIf="statusFilter !== 'Em aprovação'" (click)="selectStatus('Em aprovação')">{{ statusFilter }} <span>×</span></button>
+    <button class="clear-filters" (click)="selectOwner('Todos'); selectStatus('Em aprovação')">Limpar</button>
+  </div>
+
+  <section class="documents" aria-label="Lista de documentos">
+    <div class="document-row" *ngFor="let doc of filteredDocuments">
+      <div class="document-thumb"><span>×</span></div>
+      <div class="document-main">
+        <button class="document-title" (click)="showAction(doc)">{{ doc.title }}</button>
+        <time>{{ doc.date }}</time>
+        <span class="status-pill" [class.approved]="doc.status === 'Aprovados'" [class.rejected]="doc.status === 'Rejeitados'">{{ doc.status }}</span>
+      </div>
+      <div class="document-actions">
+        <button class="more-button" aria-label="Mais ações" (click)="showAction(doc)">•••</button>
+        <div class="row-actions">
+          <button class="favorite-button" [class.favorited]="doc.favorite" [attr.aria-label]="doc.favorite ? 'Remover favorito' : 'Adicionar favorito'" (click)="toggleFavorite(doc)">{{ doc.favorite ? '♥' : '♡' }}</button>
+          <button class="select-button" aria-label="Selecionar documento" (click)="toggleSelection(doc)"></button>
+        </div>
+      </div>
+    </div>
+    <div class="empty-state" *ngIf="filteredDocuments.length === 0">
+      <span class="empty-icon">⌕</span>
+      <strong>Não existem documentos</strong>
+      <small>Experimenta alterar os filtros selecionados.</small>
+    </div>
+  </section>
+
+  <div class="toast" *ngIf="toast" (click)="toast = ''">{{ toast }} <b>×</b></div>
+
+  <button class="capture-button" aria-label="Capturar documento" (click)="toast='Captura de documento (demonstração).'">
+    <svg viewBox="0 0 32 32"><path d="M5 11V6h6M21 6h6v5M27 21v5h-6M11 26H5v-5"/><rect x="9" y="11" width="14" height="11" rx="2"/><circle cx="16" cy="16.5" r="3"/></svg>
+  </button>
+  <nav class="bottom-nav">
+    <button [class.current]="activeNav === 'Início'" (click)="setNav('Início')"><span class="nav-icon">⌂</span><small>Início</small></button>
+    <button [class.current]="activeNav === 'Empresas'" (click)="setNav('Empresas')"><span class="nav-icon">▣</span><small>Empresas</small></button>
+    <span class="nav-spacer"></span>
+    <button [class.current]="activeNav === 'Notificações'" (click)="setNav('Notificações')"><span class="nav-icon bell">♧<i></i></span><small>Notificações</small></button>
+    <button [class.current]="activeNav === 'Pesquisar'" (click)="setNav('Pesquisar')"><span class="nav-icon">⌕</span><small>Pesquisar</small></button>
+  </nav>
+</main>
